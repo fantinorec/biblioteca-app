@@ -56,7 +56,8 @@ class Perfil
     public static function darBaja(int $id): void
     {
         $pdo = obtenerConexion();
-        // Nunca se permite dar de baja el perfil marcado como administrador.
+
+        // El perfil de Administrador nunca se puede dar de baja.
         $stmt = $pdo->prepare('UPDATE perfiles SET estado = "baja" WHERE id = :id AND es_administrador = 0');
         $stmt->execute(['id' => $id]);
     }
@@ -76,7 +77,6 @@ class Perfil
         return (int) $stmt->fetchColumn();
     }
 
-    /** Permisos de un perfil sobre todos los modulos (incluyendo los que NO tiene asignados, en 0). */
     public static function permisosCompletos(int $perfilId): array
     {
         $pdo = obtenerConexion();
@@ -95,7 +95,6 @@ class Perfil
         return $stmt->fetchAll();
     }
 
-    /** Guarda de una sola vez la matriz de permisos de un perfil (reemplaza lo anterior). */
     public static function guardarPermisos(int $perfilId, array $permisosPorModulo): void
     {
         $pdo = obtenerConexion();
@@ -111,7 +110,7 @@ class Perfil
             foreach ($permisosPorModulo as $moduloId => $permiso) {
                 $ver = !empty($permiso['ver']);
                 if (!$ver) {
-                    continue; // si no puede ver, no guardamos fila (equivale a sin permiso)
+                    continue;
                 }
                 $ins->execute([
                     'perfil_id' => $perfilId,

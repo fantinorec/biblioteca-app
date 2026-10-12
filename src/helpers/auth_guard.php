@@ -1,13 +1,6 @@
 <?php
-/**
- * Manejo de sesiones y control de acceso por perfil/modulo.
- *
- * Importante: toda decision de seguridad se toma SIEMPRE contra la
- * sesion de PHP (server-side). El localStorage del navegador solo se usa
- * para mostrar comodamente el nombre del usuario en pantalla; nunca se
- * usa para autorizar nada.
- */
 
+// La seguridad se decide siempre del lado del servidor, nunca confiando en el navegador.
 function iniciar_sesion_segura(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -28,7 +21,6 @@ function usuario_autenticado(): bool
     return !empty($_SESSION['usuario_id']);
 }
 
-/** Corta la ejecucion y redirige al login si no hay sesion activa. */
 function requerir_sesion(): void
 {
     if (!usuario_autenticado()) {
@@ -36,10 +28,6 @@ function requerir_sesion(): void
     }
 }
 
-/**
- * Carga (y cachea en sesion) el mapa de permisos del perfil actual:
- * ['libros' => ['ver'=>1,'crear'=>1,'editar'=>0,'eliminar'=>0], ...]
- */
 function permisos_usuario_actual(): array
 {
     if (isset($_SESSION['permisos']) && is_array($_SESSION['permisos'])) {
@@ -48,17 +36,12 @@ function permisos_usuario_actual(): array
     return [];
 }
 
-/** Verifica si el usuario logueado tiene un permiso puntual sobre un modulo. */
 function tiene_permiso(string $claveModulo, string $permiso = 'ver'): bool
 {
     $permisos = permisos_usuario_actual();
     return !empty($permisos[$claveModulo]["puede_{$permiso}"]);
 }
 
-/**
- * Guard para usar al principio de cada pantalla protegida:
- * exige sesion activa Y permiso de "ver" sobre el modulo indicado.
- */
 function requerir_modulo(string $claveModulo): void
 {
     requerir_sesion();
@@ -67,7 +50,6 @@ function requerir_modulo(string $claveModulo): void
     }
 }
 
-/** Reconstruye en sesion los datos de permisos de un usuario (tras login o cambios de permisos). */
 function refrescar_permisos_en_sesion(int $perfilId): void
 {
     $pdo = obtenerConexion();
@@ -91,7 +73,6 @@ function refrescar_permisos_en_sesion(int $perfilId): void
     $_SESSION['permisos'] = $permisos;
 }
 
-/** Devuelve el listado de modulos visibles (para armar el menu lateral) respetando el orden. */
 function modulos_visibles_usuario(): array
 {
     $pdo = obtenerConexion();

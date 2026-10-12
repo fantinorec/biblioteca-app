@@ -1,17 +1,63 @@
-/**
- * Renderizado de graficos (Chart.js) y exportacion a Excel (SheetJS) y
- * PDF (jsPDF) de los reportes del dashboard.
- */
 document.addEventListener('DOMContentLoaded', function () {
     const datos = window.DATOS_REPORTES || {};
     const paletaOliva = ['#6b6f3a', '#a7ac6e', '#4b4d28', '#b8860b', '#8a8266', '#3d6b8a'];
+    const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    function formatearPeriodoMes(periodo) {
+        const partes = String(periodo).split('-');
+        const indiceMes = parseInt(partes[1], 10) - 1;
+        const nombreMes = MESES_CORTOS[indiceMes];
+        return nombreMes ? nombreMes + ' ' + partes[0] : periodo;
+    }
+
+    function pluralPrestamos(cantidad) {
+        return cantidad + (cantidad === 1 ? ' préstamo' : ' préstamos');
+    }
 
     const opcionesComunes = {
         responsive: true,
-        plugins: { legend: { labels: { color: '#3a352a' } } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { labels: { color: '#3a352a' } },
+            tooltip: {
+                backgroundColor: '#3a352a',
+                titleColor: '#f6f2e7',
+                bodyColor: '#f6f2e7',
+                padding: 10,
+                cornerRadius: 6,
+                displayColors: false,
+            },
+        },
         scales: {
-            x: { ticks: { color: '#3a352a' }, grid: { color: '#ded2ba' } },
-            y: { ticks: { color: '#3a352a' }, grid: { color: '#ded2ba' }, beginAtZero: true }
+            x: { ticks: { color: '#3a352a', precision: 0 }, grid: { color: '#ded2ba' } },
+            y: { ticks: { color: '#3a352a', precision: 0 }, grid: { color: '#ded2ba' }, beginAtZero: true }
+        }
+    };
+
+    const pluginEtiquetasValor = {
+        id: 'etiquetasValor',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((dataset, indiceDataset) => {
+                const meta = chart.getDatasetMeta(indiceDataset);
+                if (meta.hidden) return;
+                meta.data.forEach((elemento, indice) => {
+                    const valor = dataset.data[indice];
+                    if (valor === null || valor === undefined) return;
+                    ctx.save();
+                    ctx.fillStyle = '#3a352a';
+                    ctx.font = '600 12px system-ui, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    if (chart.options.indexAxis === 'y') {
+                        ctx.textAlign = 'left';
+                        ctx.fillText(String(valor), elemento.x + 8, elemento.y);
+                    } else {
+                        ctx.textAlign = 'center';
+                        ctx.fillText(String(valor), elemento.x, elemento.y - 10);
+                    }
+                    ctx.restore();
+                });
+            });
         }
     };
 
@@ -19,17 +65,43 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(document.getElementById('graficoPrestamosMes'), {
             type: 'line',
             data: {
-                labels: datos.prestamosPorMes.map(f => f.periodo),
+                labels: datos.prestamosPorMes.map(f => formatearPeriodoMes(f.periodo)),
                 datasets: [{
                     label: 'Préstamos',
                     data: datos.prestamosPorMes.map(f => f.cantidad),
                     borderColor: '#6b6f3a',
-                    backgroundColor: 'rgba(107,111,58,0.2)',
-                    tension: 0.3,
+                    backgroundColor: function (contexto) {
+                        const { chart } = contexto;
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return 'rgba(107,111,58,0.15)';
+                        const gradiente = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        gradiente.addColorStop(0, 'rgba(107,111,58,0.32)');
+                        gradiente.addColorStop(1, 'rgba(107,111,58,0.02)');
+                        return gradiente;
+                    },
+                    tension: 0.35,
                     fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#6b6f3a',
+                    pointBorderColor: '#f6f2e7',
+                    pointBorderWidth: 2,
                 }]
             },
-            options: opcionesComunes
+            options: {
+                ...opcionesComunes,
+                plugins: {
+                    ...opcionesComunes.plugins,
+                    legend: { display: false },
+                    tooltip: {
+                        ...opcionesComunes.plugins.tooltip,
+                        callbacks: {
+                            label: function (contexto) { return pluralPrestamos(contexto.parsed.y); }
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -40,18 +112,59 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels: datos.librosPorCategoria.map(f => f.categoria),
                 datasets: [{ label: 'Libros', data: datos.librosPorCategoria.map(f => f.cantidad), backgroundColor: paletaOliva }]
             },
-            options: { ...opcionesComunes, plugins: { legend: { display: false } } }
+            options: {
+                ...opcionesComunes,
+                plugins: { ...opcionesComunes.plugins, legend: { display: false } }
+            }
         });
     }
 
     if (document.getElementById('graficoTopLibros')) {
+        const TITULO_MAX = 24;
         new Chart(document.getElementById('graficoTopLibros'), {
             type: 'bar',
             data: {
                 labels: datos.topLibros.map(f => f.titulo),
-                datasets: [{ label: 'Préstamos', data: datos.topLibros.map(f => f.cantidad), backgroundColor: '#4b4d28' }]
+                datasets: [{
+                    label: 'Préstamos',
+                    data: datos.topLibros.map(f => f.cantidad),
+                    backgroundColor: '#4b4d28',
+                    borderRadius: 6,
+                    maxBarThickness: 28,
+                    categoryPercentage: 0.7,
+                    barPercentage: 0.85,
+                }]
             },
-            options: { ...opcionesComunes, indexAxis: 'y', plugins: { legend: { display: false } } }
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                layout: { padding: { right: 30 } },
+                interaction: { mode: 'nearest', axis: 'y', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...opcionesComunes.plugins.tooltip,
+                        callbacks: {
+                            title: function (contextos) { return contextos[0].label; },
+                            label: function (contexto) { return pluralPrestamos(contexto.parsed.x); }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#3a352a', precision: 0 }, grid: { color: '#ded2ba' }, beginAtZero: true },
+                    y: {
+                        ticks: {
+                            color: '#3a352a',
+                            callback: function (valor) {
+                                const etiqueta = this.getLabelForValue(valor);
+                                return etiqueta.length > TITULO_MAX ? etiqueta.slice(0, TITULO_MAX - 1) + '…' : etiqueta;
+                            }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            },
+            plugins: [pluginEtiquetasValor]
         });
     }
 
@@ -66,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- Exportar a Excel (una tabla por boton) -----------------------------
     document.querySelectorAll('[data-export-xls]').forEach(function (boton) {
         boton.addEventListener('click', function () {
             const tabla = document.getElementById(boton.getAttribute('data-export-xls'));
@@ -79,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- Exportar un grafico puntual a PDF -----------------------------------
     document.querySelectorAll('[data-export-pdf]').forEach(function (boton) {
         boton.addEventListener('click', function () {
             const canvas = document.getElementById(boton.getAttribute('data-export-pdf'));
@@ -97,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- Exportar TODOS los graficos en un solo PDF --------------------------
     const btnTodo = document.getElementById('btnExportarTodoPdf');
     if (btnTodo) {
         btnTodo.addEventListener('click', function () {

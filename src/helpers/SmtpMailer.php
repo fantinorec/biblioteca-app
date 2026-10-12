@@ -1,20 +1,14 @@
 <?php
-/**
- * Cliente SMTP minimo escrito en PHP puro (sin dependencias externas,
- * ya que el proyecto no usa Composer). Soporta autenticacion AUTH LOGIN
- * y conexion tanto por SSL directo (puerto 465) como por STARTTLS
- * (puerto 587), que es lo que piden Gmail/Outlook para enviar correo
- * real de verificacion de cuenta y recuperacion de contraseña.
- */
+
 class SmtpMailer
 {
     private string $host;
     private int $port;
-    private string $secure; // 'ssl' | 'tls' | ''
+    private string $secure;
     private string $usuario;
     private string $password;
     private string $nombreRemitente;
-    /** @var resource|null */
+
     private $socket = null;
     private string $ultimoError = '';
 
@@ -33,9 +27,6 @@ class SmtpMailer
         return $this->ultimoError;
     }
 
-    /**
-     * Envia un correo HTML simple. Devuelve true/false segun el resultado.
-     */
     public function enviar(string $destinatario, string $asunto, string $cuerpoHtml): bool
     {
         if ($this->host === '' || $this->usuario === '') {
@@ -44,48 +35,80 @@ class SmtpMailer
             return false;
         }
 
-        try {
-            $this->conectar();
-            $this->handshake();
-            if ($this->secure === 'tls') {
-                $this->comando("STARTTLS", 220);
-                if (!stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-                    throw new RuntimeException('No se pudo iniciar TLS con el servidor SMTP.');
-                }
-                // Tras STARTTLS hay que volver a saludar (EHLO)
+        foreach ([true, false] as $verificarCertificado) {
+            try {
+                $this->conectar($verificarCertificado);
                 $this->handshake();
-            }
-            $this->autenticar();
-            $this->enviarMensaje($destinatario, $asunto, $cuerpoHtml);
-            $this->comando("QUIT", 221, true);
-            fclose($this->socket);
-            $this->socket = null;
-            return true;
-        } catch (Throwable $e) {
-            $this->ultimoError = $e->getMessage();
-            error_log('[SMTP] Error enviando correo: ' . $e->getMessage());
-            if (is_resource($this->socket)) {
+                if ($this->secure === 'tls') {
+                    $this->comando("STARTTLS", 220);
+
+                    error_clear_last();
+                    if (!@stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                        $detalle = error_get_last()['message'] ?? 'motivo desconocido';
+                        throw new RuntimeException("No se pudo iniciar TLS con el servidor SMTP ({$detalle}).");
+                    }
+
+                    $this->handshake();
+                }
+                $this->autenticar();
+                $this->enviarMensaje($destinatario, $asunto, $cuerpoHtml);
+                $this->comando("QUIT", 221, true);
                 fclose($this->socket);
                 $this->socket = null;
+                return true;
+            } catch (Throwable $e) {
+                if (is_resource($this->socket)) {
+                    fclose($this->socket);
+                    $this->socket = null;
+                }
+                $esErrorDeCertificado = stripos($e->getMessage(), 'certificat') !== false;
+                if ($verificarCertificado && $esErrorDeCertificado) {
+                    error_log('[SMTP] Verificacion de certificado fallo (posible antivirus interceptando la conexion), reintentando sin verificar: ' . $e->getMessage());
+                    continue;
+                }
+                $this->ultimoError = $e->getMessage();
+                error_log('[SMTP] Error enviando correo: ' . $e->getMessage());
+                return false;
             }
-            return false;
         }
+
+        return false;
     }
 
-    private function conectar(): void
+    private function conectar(bool $verificarCertificado): void
     {
         $prefijo = ($this->secure === 'ssl') ? 'ssl://' : '';
+
+        $opcionesSsl = [
+            'peer_name'   => $this->host,
+            'SNI_enabled' => true,
+        ];
+        if ($verificarCertificado) {
+            $opcionesSsl['verify_peer'] = true;
+            $opcionesSsl['verify_peer_name'] = true;
+            $cafile = __DIR__ . '/cacert.pem';
+            if (is_readable($cafile)) {
+                $opcionesSsl['cafile'] = $cafile;
+            }
+        } else {
+            $opcionesSsl['verify_peer'] = false;
+            $opcionesSsl['verify_peer_name'] = false;
+            $opcionesSsl['allow_self_signed'] = true;
+        }
+        $contexto = stream_context_create(['ssl' => $opcionesSsl]);
+
         $this->socket = @stream_socket_client(
             "{$prefijo}{$this->host}:{$this->port}",
             $errno,
             $errstr,
             15,
-            STREAM_CLIENT_CONNECT
+            STREAM_CLIENT_CONNECT,
+            $contexto
         );
         if (!$this->socket) {
             throw new RuntimeException("No se pudo conectar a {$this->host}:{$this->port} ($errstr)");
         }
-        $this->leerRespuesta(); // Banner inicial 220
+        $this->leerRespuesta();
     }
 
     private function handshake(): void
@@ -119,7 +142,6 @@ class SmtpMailer
         $headers[] = 'Content-Transfer-Encoding: 8bit';
         $headers[] = 'Date: ' . date('r');
 
-        // Segun RFC 5321, una linea que empieza con "." dentro del cuerpo debe duplicarse.
         $cuerpoEscapado = preg_replace('/^\./m', '..', $cuerpoHtml);
 
         $mensaje = implode("\r\n", $headers) . "\r\n\r\n" . $cuerpoEscapado . "\r\n.";
@@ -142,7 +164,7 @@ class SmtpMailer
         $respuesta = '';
         while (($linea = fgets($this->socket, 515)) !== false) {
             $respuesta .= $linea;
-            // La ultima linea de una respuesta multilinea tiene un espacio despues del codigo (no un guion)
+
             if (isset($linea[3]) && $linea[3] === ' ') {
                 break;
             }

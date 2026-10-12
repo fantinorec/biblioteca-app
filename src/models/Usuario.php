@@ -1,7 +1,5 @@
 <?php
-/**
- * Acceso a datos de usuarios del sistema.
- */
+
 class Usuario
 {
     public static function buscarPorEmail(string $email): ?array
@@ -158,7 +156,6 @@ class Usuario
         $stmt->execute(['id' => $id]);
     }
 
-    /** Cuenta cuantos usuarios ACTIVOS existen con un perfil marcado como administrador. */
     public static function contarAdministradoresActivos(): int
     {
         $pdo = obtenerConexion();
@@ -170,11 +167,6 @@ class Usuario
         return (int) $stmt->fetchColumn();
     }
 
-    /**
-     * Determina si el usuario indicado es el UNICO administrador activo del sistema.
-     * Se usa para impedir que se edite/de baja/cambie de perfil al ultimo admin,
-     * evitando que el sistema quede sin nadie con permisos totales.
-     */
     public static function esUnicoAdministrador(int $usuarioId): bool
     {
         $usuario = self::buscarPorId($usuarioId);

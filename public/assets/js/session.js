@@ -1,21 +1,14 @@
-/**
- * Cache liviano de la sesion en localStorage: SOLO se usa para mostrar
- * comodamente el nombre del usuario arriba a la derecha sin pedirlo de
- * nuevo al servidor en cada pantalla. La seguridad real (que modulos
- * puede ver, si esta logueado, etc.) siempre se valida en el servidor
- * contra la sesion de PHP; el localStorage nunca se usa para eso.
- */
 (function () {
     const CLAVE = 'biblioteca_usuario';
 
     window.guardarSesionLocal = function (usuario) {
         try {
             localStorage.setItem(CLAVE, JSON.stringify(usuario));
-        } catch (e) { /* almacenamiento no disponible, seguimos sin cache */ }
+        } catch (e) {  }
     };
 
     window.limpiarSesionLocal = function () {
-        try { localStorage.removeItem(CLAVE); } catch (e) { /* noop */ }
+        try { localStorage.removeItem(CLAVE); } catch (e) {  }
     };
 
     function iniciales(nombre, apellido) {
@@ -34,6 +27,6 @@
                 span.textContent = usuario.nombre + ' ' + usuario.apellido + ' · ' + usuario.perfil;
                 if (avatar) avatar.textContent = iniciales(usuario.nombre, usuario.apellido);
             }
-        } catch (e) { /* si falla, el nombre ya viene renderizado desde PHP como respaldo */ }
+        } catch (e) {  }
     });
 })();

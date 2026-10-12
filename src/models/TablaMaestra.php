@@ -1,14 +1,8 @@
 <?php
-/**
- * Acceso a datos generico para tablas maestras simples de un solo nivel
- * (autores, categorias, editoriales). Evita repetir el mismo CRUD tres
- * veces: la definicion de columnas por tabla vive en public/maestro.php.
- *
- * El nombre de tabla SIEMPRE viene de una lista blanca fija (nunca del
- * usuario), por lo que interpolarlo en el SQL es seguro aca.
- */
+
 class TablaMaestra
 {
+    // El nombre de tabla nunca lo escribe el usuario, siempre es uno de estos tres: por eso es seguro usarlo.
     private const TABLAS_PERMITIDAS = ['autores', 'categorias', 'editoriales'];
 
     private static function validarTabla(string $tabla): void

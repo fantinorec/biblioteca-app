@@ -1,8 +1,4 @@
 <?php
-/**
- * Cargador minimo de variables de entorno (sin dependencias externas).
- * Lee el archivo .env de la raiz del proyecto y lo vuelca en $_ENV / getenv().
- */
 
 function cargar_env(string $rutaArchivo): void
 {
@@ -12,7 +8,6 @@ function cargar_env(string $rutaArchivo): void
     }
 
     if (!file_exists($rutaArchivo)) {
-        // Si no existe .env pero si .env.example, avisamos de forma clara.
         $ejemplo = dirname($rutaArchivo) . '/.env.example';
         if (file_exists($ejemplo)) {
             die('Falta el archivo .env en la raiz del proyecto. Copia .env.example como .env y completa los datos (base de datos y SMTP).');
@@ -32,7 +27,7 @@ function cargar_env(string $rutaArchivo): void
         [$clave, $valor] = explode('=', $linea, 2);
         $clave = trim($clave);
         $valor = trim($valor);
-        // Quitar comillas simples/dobles si las tiene
+
         if ((str_starts_with($valor, '"') && str_ends_with($valor, '"')) ||
             (str_starts_with($valor, "'") && str_ends_with($valor, "'"))) {
             $valor = substr($valor, 1, -1);
@@ -44,9 +39,6 @@ function cargar_env(string $rutaArchivo): void
     $cargado = true;
 }
 
-/**
- * Helper para leer una variable de entorno con valor por defecto.
- */
 function env(string $clave, $porDefecto = null)
 {
     $valor = $_ENV[$clave] ?? getenv($clave);

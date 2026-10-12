@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS libros (
     anio_publicacion INT DEFAULT NULL,
     stock_total INT NOT NULL DEFAULT 1,
     stock_disponible INT NOT NULL DEFAULT 1,
+    imagen_url VARCHAR(500) DEFAULT NULL,
     estado ENUM('activo','baja') NOT NULL DEFAULT 'activo',
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_libro_autor FOREIGN KEY (autor_id) REFERENCES autores(id),

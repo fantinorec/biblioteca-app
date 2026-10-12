@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/SmtpMailer.php';
 
-/** Plantilla HTML base reutilizada por todos los correos del sistema. */
 function plantilla_email(string $titulo, string $cuerpo, string $textoBoton, string $urlBoton): string
 {
     $nombreApp = h(env('APP_NAME', 'Biblioteca'));

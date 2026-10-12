@@ -1,7 +1,4 @@
-/**
- * Sistema propio de notificaciones (reemplaza por completo a alert()).
- * Uso: mostrarToast('exito' | 'error' | 'advertencia' | 'info', 'Titulo', 'Mensaje');
- */
+// Los errores se muestran como alerta grande en el centro para que se vean bien; el resto son avisos chicos arriba a la derecha.
 (function () {
     function contenedor() {
         let el = document.getElementById('toast-contenedor');
@@ -13,7 +10,41 @@
         return el;
     }
 
+    const ICONO_ALERTA =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 3.2 21 19H3L12 3.2Z"/><path d="M12 9.3v4.4"/>' +
+        '<circle cx="12" cy="16.6" r="1" fill="currentColor" stroke="none"/></svg>';
+
+    window.mostrarAlertaError = function (titulo, mensaje) {
+        const fondo = document.createElement('div');
+        fondo.className = 'alerta-error-fondo';
+        fondo.innerHTML =
+            '<div class="alerta-error-caja">' +
+            '<div class="alerta-error-icono">' + ICONO_ALERTA + '</div>' +
+            '<div class="alerta-error-titulo">' + titulo + '</div>' +
+            '<div class="alerta-error-mensaje">' + mensaje + '</div>' +
+            '<button type="button" class="btn btn-primario">Entendido</button>' +
+            '</div>';
+        document.body.appendChild(fondo);
+
+        function cerrar() {
+            fondo.classList.add('saliendo');
+            setTimeout(function () { fondo.remove(); }, 150);
+        }
+        fondo.querySelector('button').addEventListener('click', cerrar);
+
+        fondo.addEventListener('click', function (evento) {
+            if (evento.target === fondo) cerrar();
+        });
+    };
+
     window.mostrarToast = function (tipo, titulo, mensaje, duracionMs) {
+        if (tipo === 'error') {
+            window.mostrarAlertaError(titulo, mensaje);
+            return;
+        }
+
         duracionMs = duracionMs || 4500;
         const toast = document.createElement('div');
         toast.className = 'toast toast-' + tipo;
@@ -28,8 +59,6 @@
         }, duracionMs);
     };
 
-    // Si la URL trae parametros ?ok=1&msg=... o ?error=1&msg=... los mostramos
-    // como toast apenas carga la pagina (patron usado tras los redirects de los ABM).
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         const msg = params.get('msg');

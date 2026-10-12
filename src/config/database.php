@@ -1,8 +1,4 @@
 <?php
-/**
- * Conexion PDO a MySQL usando los datos del archivo .env
- * Devuelve siempre la MISMA instancia (patron singleton simple).
- */
 
 require_once __DIR__ . '/env.php';
 
@@ -18,9 +14,14 @@ function obtenerConexion(): PDO
 
     $host = env('DB_HOST', '127.0.0.1');
     $port = env('DB_PORT', '3306');
-    $db   = env('DB_NAME', 'biblioteca_db');
-    $user = env('DB_USER', 'root');
+    $db   = env('DB_NAME', '');
+    $user = env('DB_USER', '');
     $pass = env('DB_PASS', '');
+
+    if ($db === '' || $user === '') {
+        error_log('Faltan variables de entorno DB_NAME/DB_USER: revisar el archivo .env.');
+        die('No se pudo conectar a la base de datos. Contacte al administrador.');
+    }
 
     $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
 
@@ -31,10 +32,8 @@ function obtenerConexion(): PDO
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
     } catch (PDOException $e) {
-        // No exponemos detalles sensibles de la conexion en produccion.
-        if (env('APP_ENV', 'DEV') === 'DEV') {
-            die('Error de conexion a la base de datos: ' . $e->getMessage());
-        }
+        // Si falla, nunca mostramos el motivo real en pantalla (podría revelar datos de la base).
+        error_log('Error de conexion a la base de datos: ' . $e->getMessage());
         die('No se pudo conectar a la base de datos. Contacte al administrador.');
     }
 

@@ -1,7 +1,3 @@
-/**
- * Modal de confirmacion propio (reemplaza a confirm() nativo) y
- * helper generico para abrir/cerrar los modales de formulario (ABM).
- */
 (function () {
     function asegurarModalConfirmacion() {
         let fondo = document.getElementById('modal-confirmacion');
@@ -23,9 +19,6 @@
         return fondo;
     }
 
-    /**
-     * confirmarAccion('Dar de baja', '¿Seguro que queres dar de baja este registro?', function () { ... });
-     */
     window.confirmarAccion = function (titulo, mensaje, alConfirmar) {
         const fondo = asegurarModalConfirmacion();
         fondo.querySelector('#modal-confirmacion-titulo').textContent = titulo;
@@ -48,7 +41,6 @@
         btnCancelar.addEventListener('click', cerrar);
     };
 
-    /** Abre/cierra los modales de formulario marcados con data-modal="id". */
     window.abrirModal = function (id) {
         const el = document.getElementById(id);
         if (el) el.classList.add('visible');

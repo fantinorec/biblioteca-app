@@ -1,8 +1,4 @@
 <?php
-/**
- * Registro de auditoria: deja constancia de las acciones importantes
- * (altas, bajas, modificaciones, logins) para poder rastrearlas despues.
- */
 
 function registrar_auditoria(?int $usuarioId, ?string $usuarioEmail, string $accion, ?string $tabla = null, ?int $registroId = null, ?string $detalle = null): void
 {
@@ -22,7 +18,7 @@ function registrar_auditoria(?int $usuarioId, ?string $usuarioEmail, string $acc
             'ip'            => ip_cliente(),
         ]);
     } catch (Throwable $e) {
-        // La auditoria nunca debe romper el flujo principal de la app.
+        // Si falla el registro de auditoría, no debe frenar lo que estaba haciendo el usuario.
         error_log('No se pudo registrar auditoria: ' . $e->getMessage());
     }
 }

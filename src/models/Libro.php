@@ -29,6 +29,21 @@ class Libro
         return $stmt->fetch() ?: null;
     }
 
+    public static function ultimosAgregados(int $limite = 4): array
+    {
+        $pdo = obtenerConexion();
+        $stmt = $pdo->prepare(
+            'SELECT l.*, a.nombre AS autor_nombre, a.apellido AS autor_apellido
+             FROM libros l
+             INNER JOIN autores a ON a.id = l.autor_id
+             WHERE l.estado = "activo"
+             ORDER BY l.id DESC
+             LIMIT ' . max(1, $limite)
+        );
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public static function existeIsbn(string $isbn, ?int $excluirId = null): bool
     {
         if ($isbn === '') {
@@ -49,18 +64,22 @@ class Libro
     public static function crear(array $datos): int
     {
         $pdo = obtenerConexion();
+
+        // Cada ":algo" de la consulta debe ser distinto, no se puede repetir el mismo nombre dos veces.
         $stmt = $pdo->prepare(
-            'INSERT INTO libros (titulo, isbn, autor_id, categoria_id, editorial_id, anio_publicacion, stock_total, stock_disponible)
-             VALUES (:titulo, :isbn, :autor_id, :categoria_id, :editorial_id, :anio, :stock_total, :stock_total)'
+            'INSERT INTO libros (titulo, isbn, autor_id, categoria_id, editorial_id, anio_publicacion, stock_total, stock_disponible, imagen_url)
+             VALUES (:titulo, :isbn, :autor_id, :categoria_id, :editorial_id, :anio, :stock_total, :stock_disponible, :imagen_url)'
         );
         $stmt->execute([
-            'titulo'       => $datos['titulo'],
-            'isbn'         => $datos['isbn'] ?: null,
-            'autor_id'     => $datos['autor_id'],
-            'categoria_id' => $datos['categoria_id'],
-            'editorial_id' => $datos['editorial_id'],
-            'anio'         => $datos['anio_publicacion'] ?: null,
-            'stock_total'  => $datos['stock_total'],
+            'titulo'           => $datos['titulo'],
+            'isbn'             => $datos['isbn'] ?: null,
+            'autor_id'         => $datos['autor_id'],
+            'categoria_id'     => $datos['categoria_id'],
+            'editorial_id'     => $datos['editorial_id'],
+            'anio'             => $datos['anio_publicacion'] ?: null,
+            'stock_total'      => $datos['stock_total'],
+            'stock_disponible' => $datos['stock_total'],
+            'imagen_url'       => $datos['imagen_url'] ?: null,
         ]);
         return (int) $pdo->lastInsertId();
     }
@@ -68,14 +87,15 @@ class Libro
     public static function actualizar(int $id, array $datos): void
     {
         $pdo = obtenerConexion();
-        // Ajustamos stock_disponible proporcional a la diferencia de stock_total para no perder prestamos activos.
+
         $actual = self::buscarPorId($id);
         $diferencia = (int) $datos['stock_total'] - (int) $actual['stock_total'];
         $nuevoDisponible = max(0, (int) $actual['stock_disponible'] + $diferencia);
 
         $stmt = $pdo->prepare(
             'UPDATE libros SET titulo = :titulo, isbn = :isbn, autor_id = :autor_id, categoria_id = :categoria_id,
-                    editorial_id = :editorial_id, anio_publicacion = :anio, stock_total = :stock_total, stock_disponible = :stock_disponible
+                    editorial_id = :editorial_id, anio_publicacion = :anio, stock_total = :stock_total, stock_disponible = :stock_disponible,
+                    imagen_url = :imagen_url
              WHERE id = :id'
         );
         $stmt->execute([
@@ -87,6 +107,7 @@ class Libro
             'anio'             => $datos['anio_publicacion'] ?: null,
             'stock_total'      => $datos['stock_total'],
             'stock_disponible' => $nuevoDisponible,
+            'imagen_url'       => $datos['imagen_url'] ?: null,
             'id'               => $id,
         ]);
     }
