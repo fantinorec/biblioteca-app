@@ -3,6 +3,17 @@
     <h2 class="mb-0">Catálogo de libros</h2>
 </div>
 
+<div class="card recomendador-ia">
+    <h3 class="recomendador-ia__titulo"><?= icono('star') ?> Recomendador con IA</h3>
+    <p class="texto-suave">Contanos qué tenés ganas de leer (un género, un tema, un autor parecido a...) y te sugerimos algo del catálogo.</p>
+    <form id="formRecomendadorIA" class="recomendador-ia__form">
+        <textarea id="pedidoRecomendacion" name="pedido" maxlength="300" rows="2"
+                  placeholder="Ej: algo de misterio, corto, que no sea muy sangriento..." required></textarea>
+        <button type="submit" class="btn btn-primario" id="btnPedirRecomendacion"><?= icono('star') ?> Recomendame un libro</button>
+    </form>
+    <div id="resultadoRecomendacionIA" class="recomendador-ia__resultado oculto"></div>
+</div>
+
 <div class="filtro-catalogo">
     <div class="filtro-catalogo__botones">
         <button type="button" class="chip-filtro-toggle" data-toggle-filtro="categorias">
@@ -39,7 +50,8 @@
         <div class="catalogo-tarjeta" data-categoria-id="<?= (int) $l['categoria_id'] ?>" data-autor-id="<?= (int) $l['autor_id'] ?>">
             <div class="catalogo-tarjeta__imagen">
                 <?php if (!empty($l['imagen_url'])): ?>
-                    <img src="<?= h($l['imagen_url']) ?>" alt="Portada de <?= h($l['titulo']) ?>"
+                    <img src="<?= h($l['imagen_url']) ?>" alt="Portada de <?= h($l['titulo']) ?>" class="catalogo-tarjeta__imagen-click"
+                         onclick='verImagenAmpliada(<?= json_encode($l['imagen_url'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($l['titulo'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>)'
                          onerror='this.replaceWith(Object.assign(document.createElement("div"), {className: "catalogo-tarjeta__imagen-vacia", innerHTML: <?= icono_js("book") ?>}));'>
                 <?php else: ?>
                     <div class="catalogo-tarjeta__imagen-vacia"><?= icono('book') ?></div>
@@ -69,6 +81,64 @@
     <div class="card texto-centro texto-suave">Todavía no hay libros cargados en el catálogo.</div>
 <?php endif; ?>
 
+<div class="modal-fondo" id="modalImagenLibro">
+    <div class="modal-caja modal-caja--imagen">
+        <button type="button" class="modal-imagen-cerrar" data-cerrar-modal="modalImagenLibro" aria-label="Cerrar">&times;</button>
+        <img id="imagenAmpliada" src="" alt="">
+        <p id="tituloImagenAmpliada" class="texto-suave texto-centro mb-0"></p>
+    </div>
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById('formRecomendadorIA');
+    var textarea = document.getElementById('pedidoRecomendacion');
+    var boton = document.getElementById('btnPedirRecomendacion');
+    var resultado = document.getElementById('resultadoRecomendacionIA');
+
+    form.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+        var pedido = textarea.value.trim();
+        if (!pedido) return;
+
+        boton.disabled = true;
+        boton.textContent = 'Pensando...';
+        resultado.classList.remove('oculto', 'recomendador-ia__resultado--error');
+        resultado.textContent = 'Buscando algo para vos...';
+
+        var datos = new URLSearchParams();
+        datos.set('pedido', pedido);
+
+        fetch('api/recomendar_libros.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: datos.toString(),
+        })
+            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (data) {
+                resultado.textContent = data.mensaje || 'No se pudo generar la recomendación.';
+                resultado.classList.toggle('recomendador-ia__resultado--error', !data.ok);
+            })
+            .catch(function () {
+                resultado.textContent = 'No se pudo conectar con el recomendador. Probá de nuevo en un rato.';
+                resultado.classList.add('recomendador-ia__resultado--error');
+            })
+            .finally(function () {
+                boton.disabled = false;
+                boton.innerHTML = <?= icono_js('star') ?> + ' Recomendame un libro';
+            });
+    });
+})();
+</script>
+<script>
+function verImagenAmpliada(url, titulo) {
+    if (!url) return;
+    document.getElementById('imagenAmpliada').src = url;
+    document.getElementById('imagenAmpliada').alt = 'Portada de ' + titulo;
+    document.getElementById('tituloImagenAmpliada').textContent = titulo;
+    window.abrirModal('modalImagenLibro');
+}
+</script>
 <script>
 (function () {
     var botonesToggle = document.querySelectorAll('[data-toggle-filtro]');

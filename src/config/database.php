@@ -20,7 +20,8 @@ function obtenerConexion(): PDO
 
     if ($db === '' || $user === '') {
         error_log('Faltan variables de entorno DB_NAME/DB_USER: revisar el archivo .env.');
-        die('No se pudo conectar a la base de datos. Contacte al administrador.');
+        // TODO: diagnóstico temporal (sacar el detalle de acá una vez resuelto el problema de conexión).
+        die('No se pudo conectar a la base de datos. Detalle: faltan DB_NAME y/o DB_USER en el archivo .env.');
     }
 
     $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
@@ -32,9 +33,9 @@ function obtenerConexion(): PDO
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
     } catch (PDOException $e) {
-        // Si falla, nunca mostramos el motivo real en pantalla (podría revelar datos de la base).
         error_log('Error de conexion a la base de datos: ' . $e->getMessage());
-        die('No se pudo conectar a la base de datos. Contacte al administrador.');
+        // mostrar problema real
+        die('No se pudo conectar a la base de datos. Detalle: ' . $e->getMessage());
     }
 
     return $pdo;

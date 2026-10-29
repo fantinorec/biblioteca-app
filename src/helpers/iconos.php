@@ -16,6 +16,7 @@ function icono(string $clave, string $clase = ''): string
         'history'  => '<circle cx="12" cy="12.5" r="8.3"/><path d="M12 8v4.5l3.3 2"/><path d="M6.2 4.8 5.3 8.4l3.6-.7"/>',
         'download' => '<path d="M12 3.5v11.7"/><path d="M7 10.7l5 5 5-5"/><path d="M5 20h14"/>',
         'logo'     => '<path d="M12 6c-1.9-1.3-4.5-1.8-7.2-1.6v13.4c2.7-.2 5.3.3 7.2 1.6 1.9-1.3 4.5-1.8 7.2-1.6V4.4C16.5 4.2 13.9 4.7 12 6Z"/><path d="M12 6v13.4"/>',
+        'star'     => '<path d="M12 3.3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/>',
     ];
 
     $contenido = $trazos[$clave] ?? '<circle cx="12" cy="12" r="8"/>';

@@ -71,6 +71,29 @@ class Usuario
         return $stmt->fetchAll();
     }
 
+    /** Busca usuarios por nombre, apellido o email (para el buscador de la pantalla de Calificaciones). */
+    public static function buscarPorTexto(string $busqueda): array
+    {
+        $pdo = obtenerConexion();
+        $stmt = $pdo->prepare(
+            'SELECT u.*, p.nombre AS perfil_nombre
+             FROM usuarios u INNER JOIN perfiles p ON p.id = u.perfil_id
+             WHERE u.nombre LIKE :nombre
+                OR u.apellido LIKE :apellido
+                OR CONCAT(u.nombre, " ", u.apellido) LIKE :completo
+                OR u.email LIKE :email
+             ORDER BY u.nombre ASC, u.apellido ASC'
+        );
+        $comodin = '%' . $busqueda . '%';
+        $stmt->execute([
+            'nombre'   => $comodin,
+            'apellido' => $comodin,
+            'completo' => $comodin,
+            'email'    => $comodin,
+        ]);
+        return $stmt->fetchAll();
+    }
+
     public static function crear(array $datos): int
     {
         $pdo = obtenerConexion();

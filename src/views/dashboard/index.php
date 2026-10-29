@@ -1,5 +1,8 @@
 <?php require __DIR__ . '/../../partials/header.php'; ?>
-<h1>Hola, <?= h($_SESSION['nombre']) ?></h1>
+<div class="toolbar">
+    <h1 class="mb-0">Hola, <?= h($_SESSION['nombre']) ?></h1>
+    <a href="guia.php" class="btn btn-secundario">Guía de uso</a>
+</div>
 <p class="texto-suave">Resumen general del sistema de biblioteca.</p>
 
 <?php if (!empty($ultimosLibros)): ?>

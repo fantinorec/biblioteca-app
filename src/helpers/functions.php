@@ -122,3 +122,11 @@ function asset_url(string $rutaRelativa): string
     $version = @filemtime($rutaAbsoluta) ?: time();
     return $rutaRelativa . '?v=' . $version;
 }
+
+/** Devuelve la calificación como estrellas llenas/vacías (ej: ★★★★☆), lista para imprimir en una vista. */
+function estrellas_texto(int $cantidad, int $total = 5): string
+{
+    $cantidad = max(0, min($total, $cantidad));
+    return '<span class="estrellas" aria-label="' . $cantidad . ' de ' . $total . ' estrellas" title="' . $cantidad . ' de ' . $total . ' estrellas">'
+        . str_repeat('★', $cantidad) . str_repeat('☆', $total - $cantidad) . '</span>';
+}

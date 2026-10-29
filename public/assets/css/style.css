@@ -662,6 +662,52 @@ table.tabla tbody tr:hover { background: #faf6ee; }
 .modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
 /* ---------------------------------------------------------------
+   Imagen ampliada (lightbox) de la portada de un libro
+   --------------------------------------------------------------- */
+.catalogo-tarjeta__imagen-click { cursor: zoom-in; }
+.modal-caja--imagen {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    max-width: 90vw;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+.modal-caja--imagen img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-fuerte);
+    display: block;
+}
+.modal-caja--imagen p { color: #f4efe6; }
+.modal-imagen-cerrar {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-fondo-card);
+    color: var(--color-oliva-oscuro);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--sombra);
+}
+.modal-imagen-cerrar:hover { background: var(--color-beige-oscuro); }
+
+/* ---------------------------------------------------------------
+   Calificación por estrellas de los lectores
+   --------------------------------------------------------------- */
+.estrellas { color: var(--color-advertencia); letter-spacing: 1px; }
+
+/* ---------------------------------------------------------------
    Alerta de error centrada (para errores importantes como la
    politica de contraseña: mas visible que un toast al costado)
    --------------------------------------------------------------- */
@@ -702,4 +748,29 @@ table.tabla tbody tr:hover { background: #faf6ee; }
 .mt-0 { margin-top: 0; } .mt-1 { margin-top: 8px; } .mt-2 { margin-top: 16px; }
 .mb-0 { margin-bottom: 0; } .mb-1 { margin-bottom: 8px; } .mb-2 { margin-bottom: 16px; }
 .oculto { display: none !important; }
+
+/* ---------------------------------------------------------------
+   Recomendador de libros con IA
+   --------------------------------------------------------------- */
+.recomendador-ia__titulo { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.recomendador-ia__titulo svg { width: 20px; height: 20px; color: var(--color-advertencia); }
+.recomendador-ia__form { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin-top: 10px; }
+.recomendador-ia__form textarea {
+    flex: 1 1 260px;
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    font-family: inherit;
+    resize: vertical;
+}
+.recomendador-ia__resultado {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: var(--radio);
+    background: var(--color-fondo-suave, var(--color-beige-oscuro));
+    white-space: pre-line;
+    line-height: 1.5;
+}
+.recomendador-ia__resultado--error { color: var(--color-peligro, #b3261e); }
 .chip-permiso { display:inline-flex; align-items:center; gap:6px; background:var(--color-beige-oscuro); padding:4px 10px; border-radius:20px; font-size:12px; margin:2px; }
